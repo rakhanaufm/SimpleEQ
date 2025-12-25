@@ -16,15 +16,15 @@ struct Fifo
 {
     void prepare(int numChannels, int numSamples)
     {
-        static_assert(std::is_same_v<T, juce::AudioBuffer<float>>, 
+        static_assert(std::is_same_v<T, juce::AudioBuffer<float>>,
             "prepare(numChannels, numSamples) should only be used when the Fifo is holding juce::AudioBuffer<float>");
         for (auto& buffer : buffers)
         {
             buffer.setSize(numChannels,
                 numSamples,
-                false,
-                true,
-                true);
+                false,   //clear everything?
+                true,    //including the extra space?
+                true);   //avoid reallocating if you can?
             buffer.clear();
         }
     }
@@ -73,10 +73,11 @@ private:
     std::array<T, Capacity> buffers;
     juce::AbstractFifo fifo{ Capacity };
 };
+
 enum Channel
 {
-    Right, //effectively 0
-    Left //effectively 1
+    Left, //effectively 0
+    Right //effectively 1
 };
 
 template<typename BlockType>
@@ -104,11 +105,11 @@ struct SingleChannelSampleFifo
         prepared.set(false);
         size.set(bufferSize);
 
-        bufferToFill.setSize(1,
-            bufferSize,
-            false,
-            true,
-            true);
+        bufferToFill.setSize(1,             //channel
+            bufferSize,    //num samples
+            false,         //keepExistingContent
+            true,          //clear extra space
+            true);         //avoid reallocating
         audioBufferFifo.prepare(1, bufferSize);
         fifoIndex = 0;
         prepared.set(true);
